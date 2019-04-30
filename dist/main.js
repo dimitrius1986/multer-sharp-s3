@@ -98,16 +98,7 @@ class S3Storage {
                 return size;
             });
             rxjs_1.from(sizes)
-                .pipe(operators_1.map((size) => {
-                const resizerStream = transformer_1.default(sharpOpts, size);
-                if (size.suffix === 'original') {
-                    size.Body = stream.pipe(sharp());
-                }
-                else {
-                    size.Body = stream.pipe(resizerStream);
-                }
-                return size;
-            }), operators_1.mergeMap((size) => {
+                .pipe(operators_1.mergeMap((size) => {
                 const meta = { stream: size.Body };
                 const getMetaFromSharp = meta.stream.toBuffer({
                     resolveWithObject: true,

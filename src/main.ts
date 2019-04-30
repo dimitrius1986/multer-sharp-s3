@@ -136,15 +136,6 @@ export class S3Storage implements StorageEngine {
       })
       from(sizes)
         .pipe(
-          map((size) => {
-            const resizerStream = transformer(sharpOpts, size)
-            if (size.suffix === 'original') {
-              size.Body = stream.pipe(sharp())
-            } else {
-              size.Body = stream.pipe(resizerStream)
-            }
-            return size
-          }),
           mergeMap((size) => {
             const meta = { stream: size.Body }
             const getMetaFromSharp = meta.stream.toBuffer({
