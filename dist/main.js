@@ -16,6 +16,7 @@ const mime_types_1 = require("mime-types");
 const get_sharp_options_1 = require("./get-sharp-options");
 const transformer_1 = require("./transformer");
 const get_filename_1 = require("./get-filename");
+const stream_1 = require("stream");
 class S3Storage {
     constructor(options) {
         if (!options.s3) {
@@ -112,10 +113,9 @@ class S3Storage {
                 }));
             }), operators_1.mergeMap((size) => {
                 const { Body, ContentType } = size;
-                // const streamCopy = new PassThrough()
-                // Body.pipe(streamCopy)
-                let newParams = Object.assign({}, params, { Body,
-                    ContentType, Key: `${params.Key}-${size.suffix}` });
+                const streamCopy = new stream_1.PassThrough();
+                Body.pipe(streamCopy);
+                let newParams = Object.assign({}, params, { Body: streamCopy, ContentType, Key: `${params.Key}-${size.suffix}` });
                 const upload = opts.s3.upload(newParams);
                 upload.on('httpUploadProgress', function (ev) {
                     if (ev.total) {

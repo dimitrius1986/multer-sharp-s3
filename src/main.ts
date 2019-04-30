@@ -163,12 +163,12 @@ export class S3Storage implements StorageEngine {
           }),
           mergeMap((size) => {
             const { Body, ContentType } = size
-            // const streamCopy = new PassThrough()
-            // Body.pipe(streamCopy)
+            const streamCopy = new PassThrough()
+            Body.pipe(streamCopy)
 
             let newParams = {
               ...params,
-              Body,
+              Body: streamCopy,
               ContentType,
               Key: `${params.Key}-${size.suffix}`,
             }
