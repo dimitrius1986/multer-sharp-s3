@@ -152,6 +152,7 @@ export class S3Storage implements StorageEngine {
             const { Body, ContentType } = size
             const streamCopy = new PassThrough()
             Body.pipe(streamCopy)
+            console.log(params.Key)
             let newParams = {
               ...params,
               Body: streamCopy,

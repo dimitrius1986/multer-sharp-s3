@@ -104,6 +104,7 @@ class S3Storage {
                 const { Body, ContentType } = size;
                 const streamCopy = new stream_1.PassThrough();
                 Body.pipe(streamCopy);
+                console.log(params.Key);
                 let newParams = Object.assign({}, params, { Body: streamCopy, ContentType, Key: `${params.Key}-${size.suffix}` });
                 const upload = opts.s3.upload(newParams);
                 let currentSize = { [size.suffix]: 0 };
