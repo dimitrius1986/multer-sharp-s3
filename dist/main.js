@@ -86,7 +86,7 @@ class S3Storage {
                     currentSize: {},
                     stream: stream,
                     mimetype: mimetype,
-                    sizes: Object.assign([], rxjs_1.from(opts.resize)),
+                    sizes: rxjs_1.from(opts.resize),
                 },
             };
             data[params.Key].sizes.forEach((size) => {

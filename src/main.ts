@@ -125,7 +125,7 @@ export class S3Storage implements StorageEngine {
           currentSize: {},
           stream: stream,
           mimetype: mimetype,
-          sizes: Object.assign([], from(opts.resize)),
+          sizes: from(opts.resize),
         },
       }
 
