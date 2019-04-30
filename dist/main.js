@@ -76,24 +76,23 @@ class S3Storage {
         this.opts.s3.deleteObject({ Bucket: file.Bucket, Key: file.Key }, cb);
     }
     _uploadProcess(params, file, cb) {
-        console.log('_uploadProcess', params.Body);
+        console.log('_uploadProcess', typeof params.Body);
         const { opts, sharpOpts } = this;
         let { stream, mimetype } = file;
         const { ACL, ContentDisposition, ContentType: optsContentType, StorageClass, ServerSideEncryption, Metadata, } = opts;
         if (opts.multiple && Array.isArray(opts.resize) && opts.resize.length > 0) {
-            const sizes = rxjs_1.from(opts.resize);
             let data = {
                 [params.Key]: {
                     currentSize: {},
                     stream: stream,
                     mimetype: mimetype,
+                    sizes: Object.assign([], rxjs_1.from(opts.resize)),
                 },
             };
-            sizes.forEach((size) => {
+            data[params.Key].sizes.forEach((size) => {
                 data[params.Key].currentSize[size.suffix] = 0;
             });
-            console.log('data', data);
-            sizes
+            data[params.Key].sizes
                 .pipe(operators_1.map((size) => {
                 const resizerStream = transformer_1.default(sharpOpts, size);
                 if (size.suffix === 'original') {
