@@ -77,7 +77,7 @@ class S3Storage {
         this.opts.s3.deleteObject({ Bucket: file.Bucket, Key: file.Key }, cb);
     }
     _uploadProcess(params, file, cb) {
-        console.log('_uploadProcess', file.stream);
+        console.log('_uploadProcess', params);
         const { opts, sharpOpts } = this;
         let { stream, mimetype } = file;
         const { ACL, ContentDisposition, ContentType: optsContentType, StorageClass, ServerSideEncryption, Metadata, } = opts;
@@ -85,7 +85,6 @@ class S3Storage {
             const sizes = rxjs_1.from(opts.resize);
             let currentSize = {};
             sizes.forEach((size) => {
-                delete size.Body;
                 currentSize[size.suffix] = 0;
             });
             sizes

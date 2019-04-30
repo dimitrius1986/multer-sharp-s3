@@ -108,7 +108,7 @@ export class S3Storage implements StorageEngine {
     file: EFile,
     cb: (error?: any, info?: Info) => void
   ) {
-    console.log('_uploadProcess', file.stream)
+    console.log('_uploadProcess', params)
     const { opts, sharpOpts } = this
     let { stream, mimetype } = file
     const {
@@ -123,7 +123,6 @@ export class S3Storage implements StorageEngine {
       const sizes = from(opts.resize)
       let currentSize = {}
       sizes.forEach((size) => {
-        delete size.Body
         currentSize[size.suffix] = 0
       })
       sizes
