@@ -98,9 +98,9 @@ class S3Storage {
                 const getMetaFromSharp = meta.stream.toBuffer({
                     resolveWithObject: true,
                 });
-                return rxjs_1.from(getMetaFromSharp.then((result) => {
+                return getMetaFromSharp.then((result) => {
                     return Object.assign({}, size, result.info, { ContentType: result.info.format, currentSize: result.info.size });
-                }));
+                });
             }), operators_1.mergeMap((size) => {
                 const { Body, ContentType } = size;
                 const streamCopy = new stream_1.PassThrough();

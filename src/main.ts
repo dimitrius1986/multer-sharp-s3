@@ -138,16 +138,14 @@ export class S3Storage implements StorageEngine {
             const getMetaFromSharp = meta.stream.toBuffer({
               resolveWithObject: true,
             })
-            return from(
-              getMetaFromSharp.then((result) => {
-                return {
-                  ...size,
-                  ...result.info,
-                  ContentType: result.info.format,
-                  currentSize: result.info.size,
-                }
-              })
-            )
+            return getMetaFromSharp.then((result) => {
+              return {
+                ...size,
+                ...result.info,
+                ContentType: result.info.format,
+                currentSize: result.info.size,
+              }
+            })
           }),
           mergeMap((size) => {
             const { Body, ContentType } = size
