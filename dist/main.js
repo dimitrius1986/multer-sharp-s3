@@ -77,30 +77,34 @@ class S3Storage {
         this.opts.s3.deleteObject({ Bucket: file.Bucket, Key: file.Key }, cb);
     }
     _uploadProcess(params, file, cb) {
-        console.log('_uploadProcess', typeof params.Body);
+        console.log('_uploadProcess', params);
         const { opts, sharpOpts } = this;
         let { stream, mimetype } = file;
         const { ACL, ContentDisposition, ContentType: optsContentType, StorageClass, ServerSideEncryption, Metadata, } = opts;
         if (opts.multiple && Array.isArray(opts.resize) && opts.resize.length > 0) {
-            let data = {
-                [params.Key]: {
-                    currentSize: {},
-                    stream: stream,
-                    mimetype: mimetype,
-                    sizes: rxjs_1.from(opts.resize),
-                },
-            };
-            data[params.Key].sizes.forEach((size) => {
-                data[params.Key].currentSize[size.suffix] = 0;
+            const sizes = opts.resize;
+            let currentSize = {};
+            sizes.forEach((size) => {
+                currentSize[size.suffix] = 0;
             });
-            data[params.Key].sizes
+            sizes.map((size) => {
+                const resizerStream = transformer_1.default(sharpOpts, size);
+                if (size.suffix === 'original') {
+                    size.Body = stream.pipe(sharp());
+                }
+                else {
+                    size.Body = stream.pipe(resizerStream);
+                }
+                return size;
+            });
+            rxjs_1.from(sizes)
                 .pipe(operators_1.map((size) => {
                 const resizerStream = transformer_1.default(sharpOpts, size);
                 if (size.suffix === 'original') {
-                    size.Body = data[params.Key].stream.pipe(sharp());
+                    size.Body = stream.pipe(sharp());
                 }
                 else {
-                    size.Body = data[params.Key].stream.pipe(resizerStream);
+                    size.Body = stream.pipe(resizerStream);
                 }
                 return size;
             }), operators_1.mergeMap((size) => {
@@ -119,14 +123,13 @@ class S3Storage {
                 const upload = opts.s3.upload(newParams);
                 upload.on('httpUploadProgress', function (ev) {
                     if (ev.total) {
-                        data[params.Key].currentSize[size.suffix] = ev.total;
+                        currentSize[size.suffix] = ev.total;
                     }
                 });
                 const upload$ = rxjs_1.from(upload.promise().then((result) => {
                     // tslint:disable-next-line
                     const { Body } = size, rest = __rest(size, ["Body"]);
-                    return Object.assign({}, result, rest, { currentSize: size.currentSize ||
-                            data[params.Key].currentSize[size.suffix] });
+                    return Object.assign({}, result, rest, { currentSize: size.currentSize || currentSize[size.suffix] });
                 }));
                 return upload$;
             }), operators_1.toArray())

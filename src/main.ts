@@ -108,7 +108,7 @@ export class S3Storage implements StorageEngine {
     file: EFile,
     cb: (error?: any, info?: Info) => void
   ) {
-    console.log('_uploadProcess', typeof params.Body)
+    console.log('_uploadProcess', params)
     const { opts, sharpOpts } = this
     let { stream, mimetype } = file
     const {
@@ -120,28 +120,28 @@ export class S3Storage implements StorageEngine {
       Metadata,
     } = opts
     if (opts.multiple && Array.isArray(opts.resize) && opts.resize.length > 0) {
-      let data = {
-        [params.Key]: {
-          currentSize: {},
-          stream: stream,
-          mimetype: mimetype,
-          sizes: from(opts.resize),
-        },
-      }
-
-      data[params.Key].sizes.forEach((size) => {
-        data[params.Key].currentSize[size.suffix] = 0
+      const sizes = opts.resize
+      let currentSize = {}
+      sizes.forEach((size) => {
+        currentSize[size.suffix] = 0
       })
-
-      data[params.Key].sizes
+      sizes.map((size) => {
+        const resizerStream = transformer(sharpOpts, size)
+        if (size.suffix === 'original') {
+          size.Body = stream.pipe(sharp())
+        } else {
+          size.Body = stream.pipe(resizerStream)
+        }
+        return size
+      })
+      from(sizes)
         .pipe(
           map((size) => {
             const resizerStream = transformer(sharpOpts, size)
-
             if (size.suffix === 'original') {
-              size.Body = data[params.Key].stream.pipe(sharp())
+              size.Body = stream.pipe(sharp())
             } else {
-              size.Body = data[params.Key].stream.pipe(resizerStream)
+              size.Body = stream.pipe(resizerStream)
             }
             return size
           }),
@@ -176,7 +176,7 @@ export class S3Storage implements StorageEngine {
 
             upload.on('httpUploadProgress', function(ev) {
               if (ev.total) {
-                data[params.Key].currentSize[size.suffix] = ev.total
+                currentSize[size.suffix] = ev.total
               }
             })
             const upload$ = from(
@@ -186,9 +186,7 @@ export class S3Storage implements StorageEngine {
                 return {
                   ...result,
                   ...rest,
-                  currentSize:
-                    size.currentSize ||
-                    data[params.Key].currentSize[size.suffix],
+                  currentSize: size.currentSize || currentSize[size.suffix],
                 }
               })
             )
