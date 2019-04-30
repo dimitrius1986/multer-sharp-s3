@@ -108,7 +108,7 @@ export class S3Storage implements StorageEngine {
     file: EFile,
     cb: (error?: any, info?: Info) => void
   ) {
-    console.log('_uploadProcess', params)
+    console.log('_uploadProcess', params.Body)
     const { opts, sharpOpts } = this
     let { stream, mimetype } = file
     const {
@@ -162,12 +162,12 @@ export class S3Storage implements StorageEngine {
           }),
           mergeMap((size) => {
             const { Body, ContentType } = size
-            const streamCopy = new PassThrough()
-            Body.pipe(streamCopy)
+            // const streamCopy = new PassThrough()
+            // Body.pipe(streamCopy)
 
             let newParams = {
               ...params,
-              Body: streamCopy,
+              Body,
               ContentType,
               Key: `${params.Key}-${size.suffix}`,
             }
