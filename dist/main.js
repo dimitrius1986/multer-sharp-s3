@@ -98,10 +98,10 @@ class S3Storage {
                 .pipe(operators_1.map((size) => {
                 const resizerStream = transformer_1.default(sharpOpts, size);
                 if (size.suffix === 'original') {
-                    size.Body = stream.pipe(sharp());
+                    size.Body = data[params.Key].stream.pipe(sharp());
                 }
                 else {
-                    size.Body = stream.pipe(resizerStream);
+                    size.Body = data[params.Key].stream.pipe(resizerStream);
                 }
                 return size;
             }), operators_1.mergeMap((size) => {

@@ -138,9 +138,9 @@ export class S3Storage implements StorageEngine {
             const resizerStream = transformer(sharpOpts, size)
 
             if (size.suffix === 'original') {
-              size.Body = stream.pipe(sharp())
+              size.Body = data[params.Key].stream.pipe(sharp())
             } else {
-              size.Body = stream.pipe(resizerStream)
+              size.Body = data[params.Key].stream.pipe(resizerStream)
             }
             return size
           }),
