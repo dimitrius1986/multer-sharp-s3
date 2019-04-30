@@ -85,11 +85,13 @@ class S3Storage {
             sizes
                 .pipe(operators_1.map((size) => {
                 const resizerStream = transformer_1.default(sharpOpts, size);
+                const streamCopy = new stream_1.PassThrough();
+                stream.pipe(streamCopy);
                 if (size.suffix === 'original') {
-                    size.Body = stream.pipe(sharp());
+                    size.Body = streamCopy.pipe(sharp());
                 }
                 else {
-                    size.Body = stream.pipe(resizerStream);
+                    size.Body = streamCopy.pipe(resizerStream);
                 }
                 return size;
             }), operators_1.mergeMap((size) => {
@@ -102,9 +104,8 @@ class S3Storage {
                 }));
             }), operators_1.mergeMap((size) => {
                 const { Body, ContentType } = size;
-                const streamCopy = new stream_1.PassThrough();
-                Body.pipe(streamCopy);
-                let newParams = Object.assign({}, params, { Body: streamCopy, ContentType, Key: `${params.Key}-${size.suffix}` });
+                let newParams = Object.assign({}, params, { Body,
+                    ContentType, Key: `${params.Key}-${size.suffix}` });
                 const upload = opts.s3.upload(newParams);
                 let currentSize = { [size.suffix]: 0 };
                 upload.on('httpUploadProgress', function (ev) {
