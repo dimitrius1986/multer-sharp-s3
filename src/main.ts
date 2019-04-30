@@ -124,12 +124,11 @@ export class S3Storage implements StorageEngine {
         .pipe(
           map((size) => {
             const resizerStream = transformer(sharpOpts, size)
-            const streamCopy = new PassThrough()
-            stream.pipe(streamCopy)
+
             if (size.suffix === 'original') {
-              size.Body = streamCopy.pipe(sharp())
+              size.Body = stream.pipe(sharp())
             } else {
-              size.Body = streamCopy.pipe(resizerStream)
+              size.Body = stream.pipe(resizerStream)
             }
             return size
           }),
@@ -151,10 +150,11 @@ export class S3Storage implements StorageEngine {
           }),
           mergeMap((size) => {
             const { Body, ContentType } = size
-
+            const streamCopy = new PassThrough()
+            Body.pipe(streamCopy)
             let newParams = {
               ...params,
-              Body,
+              Body: streamCopy,
               ContentType,
               Key: `${params.Key}-${size.suffix}`,
             }
