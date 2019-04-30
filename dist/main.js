@@ -91,7 +91,7 @@ class S3Storage {
                 else {
                     size.Body = stream.pipe(resizerStream);
                 }
-                let newParams = Object.assign({}, params, { Body: size.Body });
+                let newParams = Object.assign({}, params, { Body: size.Body, Key: `${params.Key}-${size.suffix}` });
                 const meta = { stream: newParams.Body };
                 const meta$ = rxjs_1.from(meta.stream.toBuffer({
                     resolveWithObject: true,

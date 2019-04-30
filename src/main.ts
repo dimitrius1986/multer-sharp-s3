@@ -130,7 +130,12 @@ export class S3Storage implements StorageEngine {
         } else {
           size.Body = stream.pipe(resizerStream)
         }
-        let newParams = { ...params, Body: size.Body }
+        let newParams = {
+          ...params,
+          Body: size.Body,
+          Key: `${params.Key}-${size.suffix}`,
+        }
+
         const meta = { stream: newParams.Body }
         const meta$ = from(
           meta.stream.toBuffer({
