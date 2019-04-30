@@ -16,7 +16,6 @@ const mime_types_1 = require("mime-types");
 const get_sharp_options_1 = require("./get-sharp-options");
 const transformer_1 = require("./transformer");
 const get_filename_1 = require("./get-filename");
-const stream_1 = require("stream");
 class S3Storage {
     constructor(options) {
         if (!options.s3) {
@@ -83,11 +82,8 @@ class S3Storage {
         const { ACL, ContentDisposition, ContentType: optsContentType, StorageClass, ServerSideEncryption, Metadata, } = opts;
         if (opts.multiple && Array.isArray(opts.resize) && opts.resize.length > 0) {
             const sizes = opts.resize;
-            let currentSize = {};
-            sizes.forEach((size) => {
-                currentSize[size.suffix] = 0;
-            });
             sizes.map((size) => {
+                let currentSize = 0;
                 const resizerStream = transformer_1.default(sharpOpts, size);
                 if (size.suffix === 'original') {
                     size.Body = stream.pipe(sharp());
@@ -95,50 +91,38 @@ class S3Storage {
                 else {
                     size.Body = stream.pipe(resizerStream);
                 }
-                return size;
-            });
-            rxjs_1.from(sizes)
-                .pipe(operators_1.mergeMap((size) => {
-                const meta = { stream: size.Body };
-                const getMetaFromSharp = meta.stream.toBuffer({
+                let newParams = Object.assign({}, params, { Body: size.Body });
+                const meta = { stream: newParams.Body };
+                const meta$ = rxjs_1.from(meta.stream.toBuffer({
                     resolveWithObject: true,
-                });
-                return rxjs_1.from(getMetaFromSharp.then((result) => {
-                    return Object.assign({}, size, result.info, { ContentType: result.info.format, currentSize: result.info.size });
                 }));
-            }), operators_1.mergeMap((size) => {
-                const { Body, ContentType } = size;
-                const streamCopy = new stream_1.PassThrough();
-                Body.pipe(streamCopy);
-                let newParams = Object.assign({}, params, { Body: streamCopy, ContentType, Key: `${params.Key}-${size.suffix}` });
-                const upload = opts.s3.upload(newParams);
-                upload.on('httpUploadProgress', function (ev) {
-                    if (ev.total) {
-                        currentSize[size.suffix] = ev.total;
-                    }
-                });
-                const upload$ = rxjs_1.from(upload.promise().then((result) => {
+                meta$
+                    .pipe(operators_1.map((metadata) => {
+                    newParams.ContentType = opts.ContentType || metadata.info.format;
+                    return metadata;
+                }), operators_1.mergeMap((metadata) => {
+                    const upload = opts.s3.upload(newParams);
+                    upload.on('httpUploadProgress', function (ev) {
+                        if (ev.total) {
+                            currentSize = ev.total;
+                        }
+                    });
+                    const upload$ = rxjs_1.from(upload.promise().then((res) => {
+                        return Object.assign({}, res, metadata.info);
+                    }));
+                    return upload$;
+                }))
+                    .subscribe((result) => {
                     // tslint:disable-next-line
-                    const { Body } = size, rest = __rest(size, ["Body"]);
-                    return Object.assign({}, result, rest, { currentSize: size.currentSize || currentSize[size.suffix] });
-                }));
-                return upload$;
-            }), operators_1.toArray())
-                .subscribe((res) => {
-                const mapArrayToObject = res.reduce((acc, curr) => {
-                    // tslint:disable-next-line
-                    const { suffix, ContentType, size, format, channels, options, currentSize } = curr, rest = __rest(curr, ["suffix", "ContentType", "size", "format", "channels", "options", "currentSize"]);
-                    acc[curr.suffix] = Object.assign({ ACL,
+                    const { size, format, channels } = result, rest = __rest(result, ["size", "format", "channels"]);
+                    const endRes = Object.assign({ ACL,
                         ContentDisposition,
                         StorageClass,
                         ServerSideEncryption,
-                        Metadata }, rest, { size: currentSize, ContentType: optsContentType || ContentType });
-                    mimetype = mime_types_1.lookup(ContentType) || `image/${ContentType}`;
-                    return acc;
-                }, {});
-                mapArrayToObject.mimetype = mimetype;
-                cb(null, JSON.parse(JSON.stringify(mapArrayToObject)));
-            }, cb);
+                        Metadata }, rest, { size: currentSize || size, ContentType: opts.ContentType || format, mimetype: mime_types_1.lookup(result.format) || `image/${result.format}` });
+                    cb(null, JSON.parse(JSON.stringify(endRes)));
+                }, cb);
+            });
         }
         else {
             let currentSize = 0;

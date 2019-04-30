@@ -121,103 +121,60 @@ export class S3Storage implements StorageEngine {
     } = opts
     if (opts.multiple && Array.isArray(opts.resize) && opts.resize.length > 0) {
       const sizes = opts.resize
-      let currentSize = {}
-      sizes.forEach((size) => {
-        currentSize[size.suffix] = 0
-      })
+
       sizes.map((size) => {
+        let currentSize = 0
         const resizerStream = transformer(sharpOpts, size)
         if (size.suffix === 'original') {
           size.Body = stream.pipe(sharp())
         } else {
           size.Body = stream.pipe(resizerStream)
         }
-        return size
-      })
-      from(sizes)
-        .pipe(
-          mergeMap((size) => {
-            const meta = { stream: size.Body }
-            const getMetaFromSharp = meta.stream.toBuffer({
-              resolveWithObject: true,
-            })
-            return from(
-              getMetaFromSharp.then((result) => {
-                return {
-                  ...size,
-                  ...result.info,
-                  ContentType: result.info.format,
-                  currentSize: result.info.size,
-                }
-              })
-            )
-          }),
-          mergeMap((size) => {
-            const { Body, ContentType } = size
-            const streamCopy = new PassThrough()
-            Body.pipe(streamCopy)
-
-            let newParams = {
-              ...params,
-              Body: streamCopy,
-              ContentType,
-              Key: `${params.Key}-${size.suffix}`,
-            }
-            const upload = opts.s3.upload(newParams)
-
-            upload.on('httpUploadProgress', function(ev) {
-              if (ev.total) {
-                currentSize[size.suffix] = ev.total
-              }
-            })
-            const upload$ = from(
-              upload.promise().then((result) => {
-                // tslint:disable-next-line
-                const { Body, ...rest } = size
-                return {
-                  ...result,
-                  ...rest,
-                  currentSize: size.currentSize || currentSize[size.suffix],
-                }
-              })
-            )
-            return upload$
-          }),
-          toArray()
+        let newParams = { ...params, Body: size.Body }
+        const meta = { stream: newParams.Body }
+        const meta$ = from(
+          meta.stream.toBuffer({
+            resolveWithObject: true,
+          })
         )
-        .subscribe((res) => {
-          const mapArrayToObject: { [k: string]: any } = res.reduce(
-            (acc, curr) => {
-              // tslint:disable-next-line
-              const {
-                suffix,
-                ContentType,
-                size,
-                format,
-                channels,
-                options,
-                currentSize,
-                ...rest
-              } = curr
-              acc[curr.suffix] = {
-                ACL,
-                ContentDisposition,
-                StorageClass,
-                ServerSideEncryption,
-                Metadata,
-                ...rest,
-                size: currentSize,
-                ContentType: optsContentType || ContentType,
-              }
-              mimetype = lookup(ContentType) || `image/${ContentType}`
-              return acc
-            },
-            {}
+        meta$
+          .pipe(
+            map((metadata) => {
+              newParams.ContentType = opts.ContentType || metadata.info.format
+              return metadata
+            }),
+            mergeMap((metadata) => {
+              const upload = opts.s3.upload(newParams)
+              upload.on('httpUploadProgress', function(ev) {
+                if (ev.total) {
+                  currentSize = ev.total
+                }
+              })
+              const upload$ = from(
+                upload.promise().then((res) => {
+                  return { ...res, ...metadata.info }
+                })
+              )
+              return upload$
+            })
           )
-
-          mapArrayToObject.mimetype = mimetype
-          cb(null, JSON.parse(JSON.stringify(mapArrayToObject)))
-        }, cb)
+          .subscribe((result) => {
+            // tslint:disable-next-line
+            const { size, format, channels, ...rest } = result
+            const endRes = {
+              ACL,
+              ContentDisposition,
+              StorageClass,
+              ServerSideEncryption,
+              Metadata,
+              ...rest,
+              size: currentSize || size,
+              ContentType: opts.ContentType || format,
+              mimetype: lookup(result.format) || `image/${result.format}`,
+            }
+            cb(null, JSON.parse(JSON.stringify(endRes)))
+          }, cb)
+      })
     } else {
       let currentSize = 0
       const resizerStream = transformer(sharpOpts, sharpOpts.resize)
