@@ -138,14 +138,16 @@ export class S3Storage implements StorageEngine {
             const getMetaFromSharp = meta.stream.toBuffer({
               resolveWithObject: true,
             })
-            return getMetaFromSharp.then((result) => {
-              return {
-                ...size,
-                ...result.info,
-                ContentType: result.info.format,
-                currentSize: result.info.size,
-              }
-            })
+            return from(
+              getMetaFromSharp.then((result) => {
+                return {
+                  ...size,
+                  ...result.info,
+                  ContentType: result.info.format,
+                  currentSize: result.info.size,
+                }
+              })
+            )
           }),
           mergeMap((size) => {
             const { Body, ContentType } = size
@@ -165,17 +167,16 @@ export class S3Storage implements StorageEngine {
                 currentSize[size.suffix] = ev.total
               }
             })
-            const upload$ = from(
-              upload.promise().then((result) => {
-                // tslint:disable-next-line
-                const { Body, ...rest } = size
-                return {
-                  ...result,
-                  ...rest,
-                  currentSize: size.currentSize || currentSize[size.suffix],
-                }
-              })
-            )
+            const upload$ = upload.promise().then((result) => {
+              // tslint:disable-next-line
+              const { Body, ...rest } = size
+              return {
+                ...result,
+                ...rest,
+                currentSize: size.currentSize || currentSize[size.suffix],
+              }
+            })
+
             return upload$
           }),
           toArray()

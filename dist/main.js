@@ -98,9 +98,9 @@ class S3Storage {
                 const getMetaFromSharp = meta.stream.toBuffer({
                     resolveWithObject: true,
                 });
-                return getMetaFromSharp.then((result) => {
+                return rxjs_1.from(getMetaFromSharp.then((result) => {
                     return Object.assign({}, size, result.info, { ContentType: result.info.format, currentSize: result.info.size });
-                });
+                }));
             }), operators_1.mergeMap((size) => {
                 const { Body, ContentType } = size;
                 const streamCopy = new stream_1.PassThrough();
@@ -114,11 +114,11 @@ class S3Storage {
                         currentSize[size.suffix] = ev.total;
                     }
                 });
-                const upload$ = rxjs_1.from(upload.promise().then((result) => {
+                const upload$ = upload.promise().then((result) => {
                     // tslint:disable-next-line
                     const { Body } = size, rest = __rest(size, ["Body"]);
                     return Object.assign({}, result, rest, { currentSize: size.currentSize || currentSize[size.suffix] });
-                }));
+                });
                 return upload$;
             }), operators_1.toArray())
                 .subscribe((res) => {
