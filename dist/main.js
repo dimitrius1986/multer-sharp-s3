@@ -83,6 +83,11 @@ class S3Storage {
         const { ACL, ContentDisposition, ContentType: optsContentType, StorageClass, ServerSideEncryption, Metadata, } = opts;
         if (opts.multiple && Array.isArray(opts.resize) && opts.resize.length > 0) {
             const sizes = rxjs_1.from(opts.resize);
+            let currentSize = {};
+            sizes.forEach((size) => {
+                delete size.Body;
+                currentSize[size.suffix] = 0;
+            });
             sizes
                 .pipe(operators_1.map((size) => {
                 const resizerStream = transformer_1.default(sharpOpts, size);
@@ -105,20 +110,18 @@ class S3Storage {
                 const { Body, ContentType } = size;
                 const streamCopy = new stream_1.PassThrough();
                 Body.pipe(streamCopy);
-                console.log(params.Key);
                 let newParams = Object.assign({}, params, { Body: streamCopy, ContentType, Key: `${params.Key}-${size.suffix}` });
                 const upload = opts.s3.upload(newParams);
-                let currentSize = { [size.suffix]: 0 };
                 upload.on('httpUploadProgress', function (ev) {
                     if (ev.total) {
                         currentSize[size.suffix] = ev.total;
                     }
                 });
-                const upload$ = upload.promise().then((result) => {
+                const upload$ = rxjs_1.from(upload.promise().then((result) => {
                     // tslint:disable-next-line
                     const { Body } = size, rest = __rest(size, ["Body"]);
                     return Object.assign({}, result, rest, { currentSize: size.currentSize || currentSize[size.suffix] });
-                });
+                }));
                 return upload$;
             }), operators_1.toArray())
                 .subscribe((res) => {

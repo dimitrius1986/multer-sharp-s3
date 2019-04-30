@@ -121,6 +121,11 @@ export class S3Storage implements StorageEngine {
     } = opts
     if (opts.multiple && Array.isArray(opts.resize) && opts.resize.length > 0) {
       const sizes = from(opts.resize)
+      let currentSize = {}
+      sizes.forEach((size) => {
+        delete size.Body
+        currentSize[size.suffix] = 0
+      })
       sizes
         .pipe(
           map((size) => {
@@ -153,7 +158,7 @@ export class S3Storage implements StorageEngine {
             const { Body, ContentType } = size
             const streamCopy = new PassThrough()
             Body.pipe(streamCopy)
-            console.log(params.Key)
+
             let newParams = {
               ...params,
               Body: streamCopy,
@@ -161,22 +166,23 @@ export class S3Storage implements StorageEngine {
               Key: `${params.Key}-${size.suffix}`,
             }
             const upload = opts.s3.upload(newParams)
-            let currentSize = { [size.suffix]: 0 }
+
             upload.on('httpUploadProgress', function(ev) {
               if (ev.total) {
                 currentSize[size.suffix] = ev.total
               }
             })
-            const upload$ = upload.promise().then((result) => {
-              // tslint:disable-next-line
-              const { Body, ...rest } = size
-              return {
-                ...result,
-                ...rest,
-                currentSize: size.currentSize || currentSize[size.suffix],
-              }
-            })
-
+            const upload$ = from(
+              upload.promise().then((result) => {
+                // tslint:disable-next-line
+                const { Body, ...rest } = size
+                return {
+                  ...result,
+                  ...rest,
+                  currentSize: size.currentSize || currentSize[size.suffix],
+                }
+              })
+            )
             return upload$
           }),
           toArray()
