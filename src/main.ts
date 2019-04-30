@@ -121,10 +121,17 @@ export class S3Storage implements StorageEngine {
     } = opts
     if (opts.multiple && Array.isArray(opts.resize) && opts.resize.length > 0) {
       const sizes = from(opts.resize)
-      let currentSize = {}
+      let data = {
+        [params.Key]: {
+          currentSize: {},
+          stream: stream,
+          mimetype: mimetype,
+        },
+      }
       sizes.forEach((size) => {
-        currentSize[size.suffix] = 0
+        data[params.Key].currentSize[size.suffix] = 0
       })
+      console.log('data', data)
       sizes
         .pipe(
           map((size) => {
@@ -168,7 +175,7 @@ export class S3Storage implements StorageEngine {
 
             upload.on('httpUploadProgress', function(ev) {
               if (ev.total) {
-                currentSize[size.suffix] = ev.total
+                data[params.Key].currentSize[size.suffix] = ev.total
               }
             })
             const upload$ = from(
@@ -178,7 +185,9 @@ export class S3Storage implements StorageEngine {
                 return {
                   ...result,
                   ...rest,
-                  currentSize: size.currentSize || currentSize[size.suffix],
+                  currentSize:
+                    size.currentSize ||
+                    data[params.Key].currentSize[size.suffix],
                 }
               })
             )
