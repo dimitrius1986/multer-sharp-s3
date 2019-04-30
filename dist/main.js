@@ -77,7 +77,7 @@ class S3Storage {
         this.opts.s3.deleteObject({ Bucket: file.Bucket, Key: file.Key }, cb);
     }
     _uploadProcess(params, file, cb) {
-        console.log('_uploadProcess', file);
+        console.log('_uploadProcess', file.stream);
         const { opts, sharpOpts } = this;
         let { stream, mimetype } = file;
         const { ACL, ContentDisposition, ContentType: optsContentType, StorageClass, ServerSideEncryption, Metadata, } = opts;

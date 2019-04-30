@@ -108,7 +108,7 @@ export class S3Storage implements StorageEngine {
     file: EFile,
     cb: (error?: any, info?: Info) => void
   ) {
-    console.log('_uploadProcess', file)
+    console.log('_uploadProcess', file.stream)
     const { opts, sharpOpts } = this
     let { stream, mimetype } = file
     const {
