@@ -29,7 +29,10 @@ const resolveImageStream = (key, value, size, imageStream) => {
     if (key === 'resize') {
         imageStream = imageStream
             .limitInputPixels(10000000000000000000)
-            .resize(size.width, size.height, size.options);
+            .resize(size.width, size.height, size.options)
+            .jpeg({
+            quality: 100,
+        });
     }
     else if (key === 'crop') {
         imageStream = imageStream[key](value);
