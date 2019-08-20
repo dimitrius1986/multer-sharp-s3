@@ -7,11 +7,7 @@ function transformer(
   options: SharpOptions,
   size: ResizeOption
 ): sharp.SharpInstance {
-  let imageStream = sharp()
-    .jpeg({
-      quality: 100,
-    })
-    .limitInputPixels(10000000000000000000)
+  let imageStream = sharp().limitInputPixels(false)
   for (const [key, value] of Object.entries(options)) {
     if (value) {
       imageStream = resolveImageStream(key, value, size, imageStream)
@@ -39,10 +35,8 @@ const validateValue = (value) => {
 const resolveImageStream = (key, value, size, imageStream) => {
   if (key === 'resize') {
     imageStream = imageStream
-      .limitInputPixels(10000000000000000000)
-      .jpeg({
-        quality: 100,
-      })
+      .limitInputPixels(false)
+
       .resize(size.width, size.height, size.options)
   } else if (key === 'crop') {
     imageStream = imageStream[key](value)
