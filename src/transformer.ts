@@ -36,8 +36,10 @@ const resolveImageStream = (key, value, size, imageStream) => {
   if (key === 'resize') {
     imageStream = imageStream
       .limitInputPixels(false)
-
       .resize(size.width, size.height, size.options)
+      .jpeg({
+        quality: 100,
+      })
   } else if (key === 'crop') {
     imageStream = imageStream[key](value)
   } else if (key === 'toFormat') {
