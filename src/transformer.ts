@@ -7,7 +7,7 @@ function transformer(
   options: SharpOptions,
   size: ResizeOption
 ): sharp.SharpInstance {
-  let imageStream = sharp()
+  let imageStream = sharp().limitInputPixels(10000000000000000000)
   for (const [key, value] of Object.entries(options)) {
     if (value) {
       imageStream = resolveImageStream(key, value, size, imageStream)
