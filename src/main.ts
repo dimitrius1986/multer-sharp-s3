@@ -125,7 +125,9 @@ export class S3Storage implements StorageEngine {
         let currentSize = 0
         const resizerStream = transformer(sharpOpts, size)
         if (size.suffix === 'original') {
-          size.Body = stream.pipe(sharp())
+          size.Body = stream.pipe(
+            sharp().limitInputPixels(10000000000000000000)
+          )
         } else {
           size.Body = stream.pipe(resizerStream)
         }
