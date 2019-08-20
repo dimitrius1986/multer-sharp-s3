@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const sharp = require("sharp");
 exports.default = transformer;
 function transformer(options, size) {
-    let imageStream = sharp();
+    let imageStream = sharp().limitInputPixels(10000000000000000000);
     for (const [key, value] of Object.entries(options)) {
         if (value) {
             imageStream = resolveImageStream(key, value, size, imageStream);
@@ -27,7 +27,9 @@ const validateValue = (value) => {
 };
 const resolveImageStream = (key, value, size, imageStream) => {
     if (key === 'resize') {
-        imageStream = imageStream.resize(size.width, size.height, size.options);
+        imageStream = imageStream
+            .limitInputPixels(10000000000000000000)
+            .resize(size.width, size.height, size.options);
     }
     else if (key === 'crop') {
         imageStream = imageStream[key](value);
