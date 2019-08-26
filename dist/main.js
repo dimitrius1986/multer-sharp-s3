@@ -83,7 +83,6 @@ class S3Storage {
             const sizes = opts.resize;
             sizes.map((size) => {
                 let currentSize = 0;
-                console.log(sharpOpts);
                 const resizerStream = transformer_1.default(sharpOpts, size);
                 if (size.suffix === 'original') {
                     size.Body = stream.pipe(sharp());
