@@ -125,7 +125,7 @@ export class S3Storage implements StorageEngine {
         let currentSize = 0
         const resizerStream = transformer(sharpOpts, size)
         if (size.suffix === 'original') {
-          size.Body = stream.pipe(sharp())
+          size.Body = stream
         } else {
           size.Body = stream.pipe(resizerStream)
         }
@@ -202,6 +202,7 @@ export class S3Storage implements StorageEngine {
                 currentSize = ev.total
               }
             })
+
             const upload$ = from(
               upload.promise().then((res) => {
                 return { ...res, ...metadata.info }
