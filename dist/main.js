@@ -11,6 +11,7 @@ var __rest = (this && this.__rest) || function (s, e) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const rxjs_1 = require("rxjs");
 const operators_1 = require("rxjs/operators");
+const sharp = require("sharp");
 const mime_types_1 = require("mime-types");
 const get_sharp_options_1 = require("./get-sharp-options");
 const transformer_1 = require("./transformer");
@@ -82,9 +83,10 @@ class S3Storage {
             const sizes = opts.resize;
             sizes.map((size) => {
                 let currentSize = 0;
+                console.log(sharpOpts);
                 const resizerStream = transformer_1.default(sharpOpts, size);
                 if (size.suffix === 'original') {
-                    size.Body = stream;
+                    size.Body = stream.pipe(sharp());
                 }
                 else {
                     size.Body = stream.pipe(resizerStream);
