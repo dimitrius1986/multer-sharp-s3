@@ -27,10 +27,10 @@ const validateValue = (value) => {
 };
 const resolveImageStream = (key, value, size, imageStream) => {
     if (key === 'resize') {
-        console.log(imageStream);
         imageStream = imageStream
             .limitInputPixels(false)
-            .resize(size.width, size.height, size.options);
+            .resize(size.width, size.height, size.options)
+            .toFormat('jpeg');
     }
     else if (key === 'crop') {
         imageStream = imageStream[key](value);
