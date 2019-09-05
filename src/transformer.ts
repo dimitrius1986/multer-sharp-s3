@@ -39,6 +39,7 @@ const resolveImageStream = (key, value, size, imageStream) => {
       imageStream = imageStream.toFormat('jpeg')
     }
   } else if (key === 'crop') {
+    console.log('crop')
     imageStream = imageStream[key](value)
   } else if (key === 'toFormat') {
     imageStream = imageStream.toFormat(validateFormat(value), value.options)
