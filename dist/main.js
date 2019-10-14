@@ -81,7 +81,7 @@ class S3Storage {
         const { ACL, ContentDisposition, ContentType: optsContentType, StorageClass, ServerSideEncryption, Metadata, } = opts;
         if (opts.multiple && Array.isArray(opts.resize) && opts.resize.length > 0) {
             const sizes = opts.resize;
-            const num_sizes = sizes.length;
+            let num_sizes = sizes.length;
             const acc = {};
             sizes.map((size) => {
                 let currentSize = 0;
@@ -116,13 +116,16 @@ class S3Storage {
                     .subscribe((result) => {
                     // tslint:disable-next-line
                     const { size, format, channels } = result, rest = __rest(result, ["size", "format", "channels"]);
-                    const endRes = Object.assign({ ACL,
+                    acc[size] = Object.assign({ ACL,
                         ContentDisposition,
                         StorageClass,
                         ServerSideEncryption,
                         Metadata }, rest, { size: currentSize || size, ContentType: opts.ContentType || format, mimetype: mime_types_1.lookup(result.format) || `image/${result.format}` });
-                    acc[size] = endRes;
-                    cb(null, JSON.parse(JSON.stringify(acc)));
+                    console.log(acc);
+                    num_sizes -= 1;
+                    if (num_sizes === 0) {
+                        cb(null, JSON.parse(JSON.stringify(acc)));
+                    }
                 }, cb);
             });
         }
