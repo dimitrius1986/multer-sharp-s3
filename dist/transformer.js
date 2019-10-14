@@ -33,6 +33,7 @@ const resolveImageStream = (key, value, size, imageStream) => {
         }
     }
     else if (key === 'crop') {
+        console.log('crop');
         imageStream = imageStream[key](value);
     }
     else if (key === 'toFormat') {

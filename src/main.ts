@@ -120,7 +120,8 @@ export class S3Storage implements StorageEngine {
     } = opts
     if (opts.multiple && Array.isArray(opts.resize) && opts.resize.length > 0) {
       const sizes = opts.resize
-
+      const num_sizes = sizes.length
+      const acc = {}
       sizes.map((size) => {
         let currentSize = 0
 
@@ -177,7 +178,8 @@ export class S3Storage implements StorageEngine {
               ContentType: opts.ContentType || format,
               mimetype: lookup(result.format) || `image/${result.format}`,
             }
-            cb(null, JSON.parse(JSON.stringify(endRes)))
+            acc[size] = endRes
+            cb(null, JSON.parse(JSON.stringify(acc)))
           }, cb)
       })
     } else {

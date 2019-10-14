@@ -81,6 +81,8 @@ class S3Storage {
         const { ACL, ContentDisposition, ContentType: optsContentType, StorageClass, ServerSideEncryption, Metadata, } = opts;
         if (opts.multiple && Array.isArray(opts.resize) && opts.resize.length > 0) {
             const sizes = opts.resize;
+            const num_sizes = sizes.length;
+            const acc = {};
             sizes.map((size) => {
                 let currentSize = 0;
                 const resizerStream = transformer_1.default(sharpOpts, size);
@@ -119,7 +121,8 @@ class S3Storage {
                         StorageClass,
                         ServerSideEncryption,
                         Metadata }, rest, { size: currentSize || size, ContentType: opts.ContentType || format, mimetype: mime_types_1.lookup(result.format) || `image/${result.format}` });
-                    cb(null, JSON.parse(JSON.stringify(endRes)));
+                    acc[size] = endRes;
+                    cb(null, JSON.parse(JSON.stringify(acc)));
                 }, cb);
             });
         }
