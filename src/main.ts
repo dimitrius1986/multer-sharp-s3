@@ -178,9 +178,10 @@ export class S3Storage implements StorageEngine {
               ContentType: opts.ContentType || format,
               mimetype: lookup(result.format) || `image/${result.format}`,
             }
-            console.log(acc)
+
             num_sizes -= 1
             if (num_sizes === 0) {
+              console.log(acc)
               cb(null, JSON.parse(JSON.stringify(acc)))
             }
           }, cb)
